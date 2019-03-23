@@ -39,7 +39,7 @@ public class ImageProcessor extends FunctioalForEachLoops {
 
 	// MARK: change picture hue - example
 	public BufferedImage changeHue() {
-		logger.log("Prepareing for hue changing...");
+		logger.log("Preparing for hue changing...");
 
 		int r = rgbWeights.redWeight;
 		int g = rgbWeights.greenWeight;
@@ -92,7 +92,7 @@ public class ImageProcessor extends FunctioalForEachLoops {
 
 	public BufferedImage greyscale() {
 
-		logger.log("Prepareing for greyscale changing...");
+		logger.log("Preparing for greyscale changing...");
 
 		int r = rgbWeights.redWeight;
 		int g = rgbWeights.greenWeight;
@@ -101,36 +101,19 @@ public class ImageProcessor extends FunctioalForEachLoops {
 
 		BufferedImage ans = newEmptyInputSizedImage();
 
-		for (int i = 0; i < ans.getHeight(); i++) {
-			for (int j = 0; j < ans.getWidth(); j++) {
-				Color c = new Color(workingImage.getRGB(i, j));
+		forEach((y,x) -> {
+			Color c = new Color(workingImage.getRGB(x, y));
+			int red = c.getRed() * r;
+			int green = c.getGreen() * g;
+			int blue = c.getBlue() * b;
 
-				int red = r * c.getRed();
-				int green = g * c.getGreen();
-				int blue = b * c.getBlue();
+			int weightsSum = r + g + b;
+			int greyColor = (red + green + blue) / weightsSum;
 
-				int weightsSum = r + g + b;
-				int greyColor = (red + green + blue) / weightsSum;
-				Color color = new Color(greyColor, greyColor, greyColor);
-				ans.setRGB(i, j, color.getRGB());
-
-			}
-		}
-
+			Color color = new Color(greyColor, greyColor, greyColor);
+			ans.setRGB(x, y, color.getRGB());
+		});
 		return ans;
-
-//		forEach((y,x) -> {
-//			Color c = new Color(workingImage.getRGB(x, y));
-//			int red = c.getRed() * r;
-//			int green = c.getGreen() * g;
-//			int blue = c.getBlue() * b;
-//			int weightsSum = r + g + b;
-//
-//			Color color = new Color((red + green + blue) / weightsSum);
-//			ans.setRGB(x, y, ((red + green + blue) / weightsSum)/max);
-//			ans.
-//		});
-//		return ans;
 	}
 
 	public BufferedImage nearestNeighbor() {
