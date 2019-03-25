@@ -92,7 +92,7 @@ public class ImageProcessor extends FunctioalForEachLoops {
 
 	public BufferedImage greyscale() {
 
-		logger.log("Preparing for greyscale changing...");
+		logger.log("creates a greyscale image.");
 
 		int r = rgbWeights.redWeight;
 		int g = rgbWeights.greenWeight;
@@ -112,13 +112,13 @@ public class ImageProcessor extends FunctioalForEachLoops {
 			Color color = new Color(greyColor, greyColor, greyColor);
 			ans.setRGB(x, y, color.getRGB());
 
-			logger.log("Changing to greyScale is done!");
 		});
+
 		return ans;
 	}
 
 	public BufferedImage nearestNeighbor() {
-		// TODO: Implement this method, remove the exception.
+		//TODO: Implement this method, remove the exception.
 		throw new UnimplementedMethodException("nearestNeighbor");
 	}
 }

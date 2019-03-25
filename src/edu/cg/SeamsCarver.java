@@ -14,6 +14,7 @@ public class SeamsCarver extends ImageProcessor {
 	private int numOfSeams;
 	private ResizeOperation resizeOp;
 	boolean[][] imageMask;
+    BufferedImage greyScaledWorkingImg;
 	// TODO: Add some additional fields
 	long[][] costMatrix;
 
@@ -77,12 +78,21 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	private long pixelEnergy(int y, int x) {
-		//TODO: Implement
-		return 0;
+
+	    //TODO: we might change x to y and y to x
+		int forbiddenCost = imageMask[x][y] ? Integer.MAX_VALUE : 0;
+        int horizontalNeighbor = (x >= greyScaledWorkingImg.getWidth()) ? (x - 1) : (x + 1);
+        int verticalNeighbor = (y >= greyScaledWorkingImg.getHeight()) ? (y - 1) : (y + 1);
+        int pixelValue = greyScaledWorkingImg.getRGB(x , y);
+        int horizontalNeighborValue = greyScaledWorkingImg.getRGB(horizontalNeighbor , y);
+        int verticalNeighborValue = greyScaledWorkingImg.getRGB(x , verticalNeighbor);
+
+		return Math.abs(horizontalNeighborValue -
+                pixelValue) + Math.abs(verticalNeighborValue - pixelValue) + forbiddenCost;
 	}
 
 	private long forwardCost(int i, int j) {
-
+		return 0;
 	}
 
 	private void calculateCostMatrix(int y, int x) {
