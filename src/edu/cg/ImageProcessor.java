@@ -97,7 +97,6 @@ public class ImageProcessor extends FunctioalForEachLoops {
 		int r = rgbWeights.redWeight;
 		int g = rgbWeights.greenWeight;
 		int b = rgbWeights.blueWeight;
-		int max = rgbWeights.maxWeight;
 
 		BufferedImage ans = newEmptyInputSizedImage();
 

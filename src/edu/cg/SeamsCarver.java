@@ -15,6 +15,9 @@ public class SeamsCarver extends ImageProcessor {
 	private ResizeOperation resizeOp;
 	boolean[][] imageMask;
 	// TODO: Add some additional fields
+	long[][] costMatrix;
+
+	private static final int DELTA_X = 1;
 
 	public SeamsCarver(Logger logger, BufferedImage workingImage, int outWidth, RGBWeights rgbWeights,
 			boolean[][] imageMask) {
@@ -71,5 +74,34 @@ public class SeamsCarver extends ImageProcessor {
 		// Once you remove (replicate) the chosen seams from the input image, you need to also
 		// remove (replicate) the matching entries from the mask as well.
 		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
+	}
+
+	private long pixelEnergy(int y, int x) {
+		//TODO: Implement
+		return 0;
+	}
+
+	private long forwardCost(int i, int j) {
+
+	}
+
+	private void calculateCostMatrix(int y, int x) {
+
+//		costMatrix[x][y] = pixelEnergy(y, x) + min(
+//				calculateCostMatrix(y - 1, x - 1),
+//				calculateCostMatrix(y - 1, x - 1),
+//				calculateCostMatrix(y - 1, x - 1)
+//		);
+	}
+
+	private static long min(long x, long y, long z) {
+		long minXY = Math.min(x, y);
+		return Math.min(minXY, z);
+	}
+
+	private void initializeCostMatrix() {
+		costMatrix = new long[workingImage.getHeight()][workingImage.getWidth()];
+
+
 	}
 }
