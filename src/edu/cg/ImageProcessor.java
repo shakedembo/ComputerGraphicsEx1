@@ -1,6 +1,6 @@
 package edu.cg;
 
-import sun.plugin.dom.css.RGBColor;
+//import sun.plugin.dom.css.RGBColor;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -111,6 +111,8 @@ public class ImageProcessor extends FunctioalForEachLoops {
 
 			Color color = new Color(greyColor, greyColor, greyColor);
 			ans.setRGB(x, y, color.getRGB());
+
+			logger.log("Changing to greyScale is done!");
 		});
 		return ans;
 	}
