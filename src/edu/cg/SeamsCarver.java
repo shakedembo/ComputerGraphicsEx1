@@ -84,11 +84,11 @@ public class SeamsCarver extends ImageProcessor {
 
 	    //TODO: we might change x to y and y to x
 		int forbiddenCost = imageMask[x][y] ? Integer.MAX_VALUE : 0;
-        int horizontalNeighbor = (x >= greyScaledWorkingImg.getWidth()) ? (x - 1) : (x + 1);
-        int verticalNeighbor = (y >= greyScaledWorkingImg.getHeight()) ? (y - 1) : (y + 1);
-        int pixelValue = greyScaledWorkingImg.getRGB(x , y);
-        int horizontalNeighborValue = greyScaledWorkingImg.getRGB(horizontalNeighbor , y);
-        int verticalNeighborValue = greyScaledWorkingImg.getRGB(x , verticalNeighbor);
+        int horizontalNeighbor = (x >= inWidth) ? (x - 1) : (x + 1);
+        int verticalNeighbor = (y >= inHeight) ? (y - 1) : (y + 1);
+        int pixelValue = greyScaledWorkingImg[x][y];
+        int horizontalNeighborValue = greyScaledWorkingImg[horizontalNeighbor][y];
+        int verticalNeighborValue = greyScaledWorkingImg[x][verticalNeighbor];
 
 		return Math.abs(horizontalNeighborValue -
                 pixelValue) + Math.abs(verticalNeighborValue - pixelValue) + forbiddenCost;
@@ -106,7 +106,7 @@ public class SeamsCarver extends ImageProcessor {
 	private long calcForwardMin(int i, int j) {
 
 		if (imageMask[i][j]) {
-			return Integer.MAX_VALUE;
+			return Integer.MAX_VALUE << 4;
 		}
 
 		long mv = Integer.MAX_VALUE;
