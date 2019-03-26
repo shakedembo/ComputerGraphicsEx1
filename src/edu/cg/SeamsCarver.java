@@ -54,8 +54,32 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	private BufferedImage reduceImageWidth() {
+		for (int i = 0; i < numOfSeams; i++) {
+			deleteMinSeams();
+		}
 		// TODO: Implement this method, remove the exception.
 		throw new UnimplementedMethodException("reduceImageWidth");
+	}
+
+	private void deleteMinSeams() {
+		int x = minimumSeamIndex();
+		int y = inHeight - 1;
+		int[] seamIndex = new int[inHeight];
+
+		seamIndex[y] = x;
+
+		for (y = inHeight - 2; y >= 0; y--) {
+
+
+			x = findNextMin(x, y);
+			seamIndex[y] = x;
+		}
+
+	}
+
+	private int findNextMin(int i, int j) {
+		//TODO: Implement
+		return 0;
 	}
 
 	private BufferedImage increaseImageWidth() {
@@ -105,9 +129,10 @@ public class SeamsCarver extends ImageProcessor {
 
 	private long calcForwardMin(int i, int j) {
 
-		if (imageMask[i][j]) {
-			return Integer.MAX_VALUE << 4;
-		}
+//		if (imageMask[i][j]) {
+//			long res = Integer.MAX_VALUE;
+//			return res << 4;
+//		}
 
 		long mv = Integer.MAX_VALUE;
 		long ml = Integer.MAX_VALUE;
@@ -159,11 +184,10 @@ public class SeamsCarver extends ImageProcessor {
 		costMatrix = new long[workingImage.getWidth()][workingImage.getHeight()];
 		calculateCostMatrix();
 
-
 	}
 
 	private int[][] convertGreyScaleTo2DArray() {
-		BufferedImage img = greyscale();
+		BufferedImage img = new ImageProcessor(logger, workingImage, rgbWeights).greyscale();
 		int[][] image = new int[this.inWidth][this.inHeight];
 
 		this.forEach((y, x) -> {
@@ -174,8 +198,17 @@ public class SeamsCarver extends ImageProcessor {
 		return image;
 	}
 
-	public void run() {
+	private int minimumSeamIndex() {
 		greyScaledWorkingImg = convertGreyScaleTo2DArray();
 		initializeCostMatrix();
+		long min = Integer.MAX_VALUE;
+		min <<= 8;
+		int j = 0;
+		for (j = 0; j < inWidth; j++) {
+			if (min < costMatrix[inHeight - 1][j]) {
+				min = costMatrix[inHeight - 1][j];
+			}
+		}
+		return j;
 	}
 }
