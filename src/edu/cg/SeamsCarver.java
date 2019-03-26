@@ -1,5 +1,6 @@
 package edu.cg;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class SeamsCarver extends ImageProcessor {
@@ -14,11 +15,13 @@ public class SeamsCarver extends ImageProcessor {
 	private int numOfSeams;
 	private ResizeOperation resizeOp;
 	boolean[][] imageMask;
-    BufferedImage greyScaledWorkingImg;
 	// TODO: Add some additional fields
 	long[][] costMatrix;
+	int[][] greyScaledWorkingImg;
 
 	private static final int DELTA_X = 1;
+	private static final int FACTOR = 50;
+
 
 	public SeamsCarver(Logger logger, BufferedImage workingImage, int outWidth, RGBWeights rgbWeights,
 			boolean[][] imageMask) {
@@ -91,17 +94,60 @@ public class SeamsCarver extends ImageProcessor {
                 pixelValue) + Math.abs(verticalNeighborValue - pixelValue) + forbiddenCost;
 	}
 
-	private long forwardCost(int i, int j) {
-		return 0;
+	private void calculateCostMatrix() {
+
+		for (int i = 0; i < inHeight; i++) {
+			for (int j = 0; j < inWidth; j++) {
+				costMatrix[i][j] = pixelEnergy(i, j) + calcForwardMin(i, j);
+			}
+		}
 	}
 
-	private void calculateCostMatrix(int y, int x) {
+	private long calcForwardMin(int i, int j) {
 
-//		costMatrix[x][y] = pixelEnergy(y, x) + min(
-//				calculateCostMatrix(y - 1, x - 1),
-//				calculateCostMatrix(y - 1, x - 1),
-//				calculateCostMatrix(y - 1, x - 1)
-//		);
+		if (imageMask[i][j]) {
+			return Integer.MAX_VALUE;
+		}
+
+		long mv = Integer.MAX_VALUE;
+		long ml = Integer.MAX_VALUE;
+		long mr = Integer.MAX_VALUE;
+
+		//Maybe all three should be factor or maybe factor should be 255L test which works better
+		long cv = FACTOR;
+		long cr = 255L;
+		long cl = 255L;
+
+		//legal
+		if (i > 0 && j > 0 && j < inWidth - 1) {
+			cv = Math.abs(greyScaledWorkingImg[i][j + 1] - greyScaledWorkingImg[i][j - 1]);
+			cl = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j - 1]);
+			cr = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j + 1]);
+
+			mv = costMatrix[i - 1][j];
+			ml = costMatrix[i - 1][j - 1];
+			mr = costMatrix[i - 1][j + 1];
+		}
+		// i != 0, j == 0
+		else if (i != 0 && j == 0) {
+			cr = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j + 1]);
+
+			mv = costMatrix[i - 1][j];
+			mr = costMatrix[i - 1][j + 1];
+		}
+		// i != 0, j == width
+		else if (i != 0 && j == inWidth - 1) {
+			cl = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j - 1]);
+
+			mv = costMatrix[i - 1][j];
+			ml = costMatrix[i - 1][j - 1];
+		}
+		// i == 0
+		else {
+			return 0L;
+		}
+
+		return min(ml + cl, mv + cv, mr + cr);
 	}
 
 	private static long min(long x, long y, long z) {
@@ -110,8 +156,26 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	private void initializeCostMatrix() {
-		costMatrix = new long[workingImage.getHeight()][workingImage.getWidth()];
+		costMatrix = new long[workingImage.getWidth()][workingImage.getHeight()];
+		calculateCostMatrix();
 
 
+	}
+
+	private int[][] convertGreyScaleTo2DArray() {
+		BufferedImage img = greyscale();
+		int[][] image = new int[this.inWidth][this.inHeight];
+
+		this.forEach((y, x) -> {
+			Color c = new Color(img.getRGB(x, y));
+			image[y][x] = c.getBlue();
+		});
+
+		return image;
+	}
+
+	public void run() {
+		greyScaledWorkingImg = convertGreyScaleTo2DArray();
+		initializeCostMatrix();
 	}
 }
