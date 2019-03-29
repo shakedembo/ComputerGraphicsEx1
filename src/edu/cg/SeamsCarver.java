@@ -1,5 +1,7 @@
 package edu.cg;
 
+
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
@@ -16,6 +18,7 @@ public class SeamsCarver extends ImageProcessor {
 	private ResizeOperation resizeOp;
 	boolean[][] imageMask;
 	// TODO: Add some additional fields
+	BufferedImage result = workingImage;
 	long[][] costMatrix;
 	int[][] greyScaledWorkingImg;
 
@@ -56,30 +59,79 @@ public class SeamsCarver extends ImageProcessor {
 	private BufferedImage reduceImageWidth() {
 		for (int i = 0; i < numOfSeams; i++) {
 			deleteMinSeams();
+
 		}
-		// TODO: Implement this method, remove the exception.
-		throw new UnimplementedMethodException("reduceImageWidth");
+
+		return result;
 	}
 
 	private void deleteMinSeams() {
 		int x = minimumSeamIndex();
-		int y = inHeight - 1;
-		int[] seamIndex = new int[inHeight];
+		int y = result.getHeight() - 1;
+		int[] seamIndex = new int[result.getHeight()];
 
 		seamIndex[y] = x;
 
-		for (y = inHeight - 2; y >= 0; y--) {
-
-
-			x = findNextMin(x, y);
+		for (y = result.getHeight() - 1; y > 0; y--) {
+			x = findNextMin(y, x);
 			seamIndex[y] = x;
 		}
 
+		BufferedImage img = removeSeam(seamIndex);
+		result = img;
+
+	}
+
+	private BufferedImage removeSeam(int[] seamIndex) {
+		BufferedImage ans = newEmptyImage(result.getWidth() - 1, result.getHeight());
+		int colIndex;
+		for (int i = 0; i < result.getHeight(); i++) {
+			colIndex = 0;
+			for (int j = 0; j < result.getWidth(); j++) {
+
+				if (seamIndex[i] == j) {
+					continue;
+				}
+
+				ans.setRGB(colIndex, i, result.getRGB(j, i));
+				colIndex++;
+			}
+		}
+		return ans;
 	}
 
 	private int findNextMin(int i, int j) {
-		//TODO: Implement
-		return 0;
+
+		long leftValue = -1;
+		long centerValue = costMatrix[i - 1][j];
+		long rightValue = -1;
+		long min;
+
+		//Initialize minimum candidates based on validity check.
+		if (j == 0) {
+			rightValue = costMatrix[i - 1][j + 1];
+			min = Math.min(rightValue, centerValue);
+		}
+		else if (j == result.getWidth() - 1) {
+			leftValue = costMatrix[i - 1][j - 1];
+			min = Math.min(leftValue, centerValue);
+		}
+		else {
+			leftValue = costMatrix[i - 1][j - 1];
+			rightValue = costMatrix[i - 1][j + 1];
+			min = min(leftValue, centerValue, rightValue);
+		}
+
+		//Return index accordingly
+		if (min == leftValue) {
+			return  j - 1;
+		}
+		else if (min == centerValue) {
+			return j;
+		}
+		else {
+			return j + 1;
+		}
 	}
 
 	private BufferedImage increaseImageWidth() {
@@ -93,6 +145,8 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	public boolean[][] getMaskAfterSeamCarving() {
+
+		return new boolean[result.getHeight()][result.getWidth() - 1];
 		// TODO: Implement this method, remove the exception.
 		// This method should return the mask of the resize image after seam carving. Meaning,
 		// after applying Seam Carving on the input image, getMaskAfterSeamCarving() will return
@@ -101,18 +155,25 @@ public class SeamsCarver extends ImageProcessor {
 		// HINT:
 		// Once you remove (replicate) the chosen seams from the input image, you need to also
 		// remove (replicate) the matching entries from the mask as well.
-		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
+//		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
 	}
 
-	private long pixelEnergy(int y, int x) {
+	private long pixelEnergy(int x, int y) {
 
 	    //TODO: we might change x to y and y to x
 		int forbiddenCost = imageMask[x][y] ? Integer.MAX_VALUE : 0;
-        int horizontalNeighbor = (x >= inWidth) ? (x - 1) : (x + 1);
-        int verticalNeighbor = (y >= inHeight) ? (y - 1) : (y + 1);
+        int verticalNeighbor = (x + 1 >= result.getHeight()) ? (x - 1) : (x + 1);
+        int horizontalNeighbor = (y + 1 >= result.getWidth()) ? (y - 1) : (y + 1);
         int pixelValue = greyScaledWorkingImg[x][y];
-        int horizontalNeighborValue = greyScaledWorkingImg[horizontalNeighbor][y];
-        int verticalNeighborValue = greyScaledWorkingImg[x][verticalNeighbor];
+
+        int horizontalNeighborValue;
+		int verticalNeighborValue;
+
+
+		verticalNeighborValue = greyScaledWorkingImg[verticalNeighbor][y];
+
+
+		horizontalNeighborValue = greyScaledWorkingImg[x][horizontalNeighbor];
 
 		return Math.abs(horizontalNeighborValue -
                 pixelValue) + Math.abs(verticalNeighborValue - pixelValue) + forbiddenCost;
@@ -120,8 +181,8 @@ public class SeamsCarver extends ImageProcessor {
 
 	private void calculateCostMatrix() {
 
-		for (int i = 0; i < inHeight; i++) {
-			for (int j = 0; j < inWidth; j++) {
+		for (int i = 0; i < result.getHeight(); i++) {
+			for (int j = 0; j < result.getWidth(); j++) {
 				costMatrix[i][j] = pixelEnergy(i, j) + calcForwardMin(i, j);
 			}
 		}
@@ -144,7 +205,7 @@ public class SeamsCarver extends ImageProcessor {
 		long cl = 255L;
 
 		//legal
-		if (i > 0 && j > 0 && j < inWidth - 1) {
+		if (i > 0 && j > 0 && j < result.getWidth() - 1) {
 			cv = Math.abs(greyScaledWorkingImg[i][j + 1] - greyScaledWorkingImg[i][j - 1]);
 			cl = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j - 1]);
 			cr = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j + 1]);
@@ -161,7 +222,7 @@ public class SeamsCarver extends ImageProcessor {
 			mr = costMatrix[i - 1][j + 1];
 		}
 		// i != 0, j == width
-		else if (i != 0 && j == inWidth - 1) {
+		else if (i != 0 && j == result.getWidth() - 1) {
 			cl = cv + Math.abs(greyScaledWorkingImg[i - 1][j] - greyScaledWorkingImg[i][j - 1]);
 
 			mv = costMatrix[i - 1][j];
@@ -181,19 +242,23 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	private void initializeCostMatrix() {
-		costMatrix = new long[workingImage.getWidth()][workingImage.getHeight()];
+		costMatrix = new long[result.getHeight()][result.getWidth()];
 		calculateCostMatrix();
 
 	}
 
 	private int[][] convertGreyScaleTo2DArray() {
-		BufferedImage img = new ImageProcessor(logger, workingImage, rgbWeights).greyscale();
-		int[][] image = new int[this.inWidth][this.inHeight];
+		BufferedImage img = new ImageProcessor(logger, result, rgbWeights).greyscale();
+		int[][] image = new int[this.result.getHeight()][this.result.getWidth()];
 
-		this.forEach((y, x) -> {
-			Color c = new Color(img.getRGB(x, y));
-			image[y][x] = c.getBlue();
-		});
+		for (int i = 0; i < result.getHeight(); i++) {
+
+			for (int j = 0; j < result.getWidth(); j++) {
+				Color c = new Color(img.getRGB(j, i));
+				image[i][j] = c.getBlue();
+			}
+		}
+
 
 		return image;
 	}
@@ -204,11 +269,13 @@ public class SeamsCarver extends ImageProcessor {
 		long min = Integer.MAX_VALUE;
 		min <<= 8;
 		int j = 0;
-		for (j = 0; j < inWidth; j++) {
-			if (min < costMatrix[inHeight - 1][j]) {
-				min = costMatrix[inHeight - 1][j];
+		int minIndex = -1;
+		for (j = 0; j < result.getWidth(); j++) {
+			if (min > costMatrix[result.getHeight() - 1][j]) {
+				min = costMatrix[result.getHeight() - 1][j];
+				minIndex = j;
 			}
 		}
-		return j;
+		return minIndex;
 	}
 }
