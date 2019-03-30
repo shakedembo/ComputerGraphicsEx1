@@ -18,8 +18,10 @@ public class SeamsCarver extends ImageProcessor {
 	private int numOfSeams;
 	private ResizeOperation resizeOp;
 	boolean[][] imageMask;
+
 	// TODO: Add some additional fields
-	BufferedImage result = workingImage;
+
+    BufferedImage result = workingImage;
 	long[][] costMatrix;
 	int[][] greyScaledWorkingImg;
 
@@ -28,7 +30,7 @@ public class SeamsCarver extends ImageProcessor {
     private int[][] seamsIndices;
 	private int[][] seamsValues;
 
-	private static final int DELTA_X = 1;
+//	private static final int DELTA_X = 1;
 	private static final int FACTOR = 50;
 
 
@@ -249,7 +251,7 @@ public class SeamsCarver extends ImageProcessor {
 
 		for (int i = 0; i < result.getHeight(); i++) {
 			for (int j = 0; j < result.getWidth(); j++) {
-				costMatrix[i][j] = (long)pixelEnergy(i, j) + calcForwardMin(i, j);
+				costMatrix[i][j] = pixelEnergy(i, j) + calcForwardMin(i, j);
 			}
 		}
 	}

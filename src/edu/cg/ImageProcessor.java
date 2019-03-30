@@ -131,7 +131,6 @@ public class ImageProcessor extends FunctioalForEachLoops {
 			int imgX2 = Math.min(imgX, this.inWidth - 1);
 			int imgY2 = Math.min(imgY, this.inHeight - 1);
 			ans.setRGB(x, y, this.workingImage.getRGB(imgX2, imgY2));
-			return;
 		});
 		popForEachParameters();
 
