@@ -52,7 +52,7 @@ public class SeamsCarver extends ImageProcessor {
 		else
 			resizeOp = this::duplicateWorkingImage;
 
-		// TODO: You may initialize your additional fields and apply some preliminary
+
 		seamsIndices = new int[numOfSeams][];
         seamsValues = new int[numOfSeams][];
 
@@ -64,22 +64,41 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
     public BufferedImage showSeams(int seamColorRGB) {
-        // TODO: Implement this method (bonus), remove the exception.
-        throw new UnimplementedMethodException("showSeams");
+
+        result = reduceImageWidth();
+
+        for (int i = numOfSeams - 1; i >= 0; i--) {
+            result = recoverSeam(i, seamColorRGB);
+        }
+
+        return result;
+    }
+
+    private BufferedImage recoverSeam(int seamNumber, int seamColorRGB) {
+
+	    BufferedImage ans = newEmptyImage(result.getWidth() + 1, result.getHeight());
+        int colIndex;
+
+        for (int i = 0; i < result.getHeight(); i++) {
+            colIndex = 0;
+            for (int j = 0; j < result.getWidth(); j++) {
+
+                if (seamsIndices[seamNumber][i] == j) {
+                    ans.setRGB(colIndex, i, seamColorRGB);
+                    colIndex ++;
+                }
+
+                ans.setRGB(colIndex, i, result.getRGB(j, i));
+                colIndex++;
+            }
+        }
+
+        return ans;
     }
 
     public boolean[][] getMaskAfterSeamCarving() {
 
-        return new boolean[result.getHeight()][result.getWidth() - 1];
-        // TODO: Implement this method, remove the exception.
-        // This method should return the mask of the resize image after seam carving. Meaning,
-        // after applying Seam Carving on the input image, getMaskAfterSeamCarving() will return
-        // a mask, with the same dimensions as the resized image, where the mask values match the
-        // original mask values for the corresponding pixels.
-        // HINT:
-        // Once you remove (replicate) the chosen seamsIndices from the input image, you need to also
-        // remove (replicate) the matching entries from the mask as well.
-//		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
+        return imageMask;
     }
 
     //Privates
