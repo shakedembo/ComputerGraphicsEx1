@@ -7,7 +7,8 @@ import java.awt.image.BufferedImage;
 
 public class SeamsCarver extends ImageProcessor {
 
-	// MARK: An inner interface for functional programming.
+
+    // MARK: An inner interface for functional programming.
 	@FunctionalInterface
 	interface ResizeOperation {
 		BufferedImage resize();
@@ -21,6 +22,11 @@ public class SeamsCarver extends ImageProcessor {
 	BufferedImage result = workingImage;
 	long[][] costMatrix;
 	int[][] greyScaledWorkingImg;
+
+	private int[] currentSeamIndices;
+	private int[] currentSeamValues;
+    private int[][] seamsIndices;
+	private int[][] seamsValues;
 
 	private static final int DELTA_X = 1;
 	private static final int FACTOR = 50;
@@ -36,7 +42,7 @@ public class SeamsCarver extends ImageProcessor {
 			throw new RuntimeException("Can not apply seam carving: workingImage is too small");
 
 		if (numOfSeams > inWidth / 2)
-			throw new RuntimeException("Can not apply seam carving: too many seams...");
+			throw new RuntimeException("Can not apply seam carving: too many seamsIndices...");
 
 		// Setting resizeOp by with the appropriate method reference
 		if (outWidth > inWidth)
@@ -47,7 +53,8 @@ public class SeamsCarver extends ImageProcessor {
 			resizeOp = this::duplicateWorkingImage;
 
 		// TODO: You may initialize your additional fields and apply some preliminary
-		// calculations.
+		seamsIndices = new int[numOfSeams][];
+        seamsValues = new int[numOfSeams][];
 
 		this.logger.log("preliminary calculations were ended.");
 	}
@@ -56,34 +63,57 @@ public class SeamsCarver extends ImageProcessor {
 		return resizeOp.resize();
 	}
 
+    public BufferedImage showSeams(int seamColorRGB) {
+        // TODO: Implement this method (bonus), remove the exception.
+        throw new UnimplementedMethodException("showSeams");
+    }
+
+    public boolean[][] getMaskAfterSeamCarving() {
+
+        return new boolean[result.getHeight()][result.getWidth() - 1];
+        // TODO: Implement this method, remove the exception.
+        // This method should return the mask of the resize image after seam carving. Meaning,
+        // after applying Seam Carving on the input image, getMaskAfterSeamCarving() will return
+        // a mask, with the same dimensions as the resized image, where the mask values match the
+        // original mask values for the corresponding pixels.
+        // HINT:
+        // Once you remove (replicate) the chosen seamsIndices from the input image, you need to also
+        // remove (replicate) the matching entries from the mask as well.
+//		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
+    }
+
+    //Privates
+
 	private BufferedImage reduceImageWidth() {
 		for (int i = 0; i < numOfSeams; i++) {
-			deleteMinSeams();
-
+            findMinSeamIndices(i);
+            removeSeam(currentSeamIndices);
 		}
 
 		return result;
 	}
 
-	private void deleteMinSeams() {
-		int x = minimumSeamIndex();
-		int y = result.getHeight() - 1;
-		int[] seamIndex = new int[result.getHeight()];
+    private void findMinSeamIndices(int seamNumber) {
+        int x = minimumSeamIndex();
+        int y = result.getHeight() - 1;
+        currentSeamIndices = new int[result.getHeight()];
+        currentSeamValues = new int[result.getHeight()];
 
-		seamIndex[y] = x;
+        currentSeamIndices[y] = x;
 
-		for (y = result.getHeight() - 1; y > 0; y--) {
-			x = findNextMin(y, x);
-			seamIndex[y] = x;
-		}
+        for (y = result.getHeight() - 1; y > 0; y--) {
+            x = findNextMin(y, x);
+            currentSeamValues[y - 1] = result.getRGB(x, y - 1);
+            currentSeamIndices[y - 1] = x;
+        }
+        seamsIndices[seamNumber] = currentSeamIndices;
+        seamsValues[seamNumber] = currentSeamValues;
+    }
 
-		BufferedImage img = removeSeam(seamIndex);
-		result = img;
-
-	}
-
-	private BufferedImage removeSeam(int[] seamIndex) {
+    private void removeSeam(int[] seamIndex) {
 		BufferedImage ans = newEmptyImage(result.getWidth() - 1, result.getHeight());
+		boolean[][] newMask = new boolean[result.getHeight()][result.getWidth() - 1];
+
 		int colIndex;
 		for (int i = 0; i < result.getHeight(); i++) {
 			colIndex = 0;
@@ -94,10 +124,12 @@ public class SeamsCarver extends ImageProcessor {
 				}
 
 				ans.setRGB(colIndex, i, result.getRGB(j, i));
+				newMask[i][colIndex] = imageMask[i][j];
 				colIndex++;
 			}
 		}
-		return ans;
+		imageMask = newMask;
+		result = ans;
 	}
 
 	private int findNextMin(int i, int j) {
@@ -135,39 +167,49 @@ public class SeamsCarver extends ImageProcessor {
 	}
 
 	private BufferedImage increaseImageWidth() {
-		// TODO: Implement this method, remove the exception.
-		throw new UnimplementedMethodException("increaseImageWidth");
+
+        result = reduceImageWidth();
+
+        for (int i = numOfSeams - 1; i >= 0; i--) {
+            result = recoverDoublesOfSeam(i);
+        }
+
+        return result;
 	}
 
-	public BufferedImage showSeams(int seamColorRGB) {
-		// TODO: Implement this method (bonus), remove the exception.
-		throw new UnimplementedMethodException("showSeams");
-	}
+    private BufferedImage recoverDoublesOfSeam(int seamNumber) {
 
-	public boolean[][] getMaskAfterSeamCarving() {
+        BufferedImage ans = newEmptyImage(result.getWidth() + 2, result.getHeight());
+        int colIndex;
 
-		return new boolean[result.getHeight()][result.getWidth() - 1];
-		// TODO: Implement this method, remove the exception.
-		// This method should return the mask of the resize image after seam carving. Meaning,
-		// after applying Seam Carving on the input image, getMaskAfterSeamCarving() will return
-		// a mask, with the same dimensions as the resized image, where the mask values match the
-		// original mask values for the corresponding pixels.
-		// HINT:
-		// Once you remove (replicate) the chosen seams from the input image, you need to also
-		// remove (replicate) the matching entries from the mask as well.
-//		throw new UnimplementedMethodException("getMaskAfterSeamCarving");
-	}
+        for (int i = 0; i < result.getHeight(); i++) {
+            colIndex = 0;
+            for (int j = 0; j < result.getWidth(); j++) {
+
+                if (seamsIndices[seamNumber][i] == j) {
+                    ans.setRGB(colIndex, i, seamsValues[seamNumber][i]);
+                    ans.setRGB(colIndex + 1, i, seamsValues[seamNumber][i]);
+
+                    colIndex += 2;
+                }
+
+                ans.setRGB(colIndex, i, result.getRGB(j, i));
+                colIndex++;
+            }
+        }
+
+        return ans;
+    }
 
 	private long pixelEnergy(int x, int y) {
 
-	    //TODO: we might change x to y and y to x
-		int forbiddenCost = imageMask[x][y] ? Integer.MAX_VALUE : 0;
+		long forbiddenCost = imageMask[x][y] ? Integer.MAX_VALUE : 0;
         int verticalNeighbor = (x + 1 >= result.getHeight()) ? (x - 1) : (x + 1);
         int horizontalNeighbor = (y + 1 >= result.getWidth()) ? (y - 1) : (y + 1);
-        int pixelValue = greyScaledWorkingImg[x][y];
+        long pixelValue = greyScaledWorkingImg[x][y];
 
-        int horizontalNeighborValue;
-		int verticalNeighborValue;
+        long horizontalNeighborValue;
+		long verticalNeighborValue;
 
 
 		verticalNeighborValue = greyScaledWorkingImg[verticalNeighbor][y];
@@ -175,34 +217,34 @@ public class SeamsCarver extends ImageProcessor {
 
 		horizontalNeighborValue = greyScaledWorkingImg[x][horizontalNeighbor];
 
-		return Math.abs(horizontalNeighborValue -
-                pixelValue) + Math.abs(verticalNeighborValue - pixelValue) + forbiddenCost;
+		long res = Math.abs(horizontalNeighborValue -
+                pixelValue);
+		res += Math.abs(verticalNeighborValue - pixelValue);
+        res += forbiddenCost;
+
+
+		return res;
 	}
 
 	private void calculateCostMatrix() {
 
 		for (int i = 0; i < result.getHeight(); i++) {
 			for (int j = 0; j < result.getWidth(); j++) {
-				costMatrix[i][j] = pixelEnergy(i, j) + calcForwardMin(i, j);
+				costMatrix[i][j] = (long)pixelEnergy(i, j) + calcForwardMin(i, j);
 			}
 		}
 	}
 
 	private long calcForwardMin(int i, int j) {
 
-//		if (imageMask[i][j]) {
-//			long res = Integer.MAX_VALUE;
-//			return res << 4;
-//		}
-
-		long mv = Integer.MAX_VALUE;
-		long ml = Integer.MAX_VALUE;
-		long mr = Integer.MAX_VALUE;
+		long mv;
+		long ml;
+		long mr;
 
 		//Maybe all three should be factor or maybe factor should be 255L test which works better
 		long cv = FACTOR;
-		long cr = 255L;
-		long cl = 255L;
+		long cr;
+		long cl;
 
 		//legal
 		if (i > 0 && j > 0 && j < result.getWidth() - 1) {
@@ -220,6 +262,7 @@ public class SeamsCarver extends ImageProcessor {
 
 			mv = costMatrix[i - 1][j];
 			mr = costMatrix[i - 1][j + 1];
+			return Math.min(mv + cv, mr + cr);
 		}
 		// i != 0, j == width
 		else if (i != 0 && j == result.getWidth() - 1) {
@@ -227,6 +270,7 @@ public class SeamsCarver extends ImageProcessor {
 
 			mv = costMatrix[i - 1][j];
 			ml = costMatrix[i - 1][j - 1];
+			return Math.min(ml + cl, mv + cv);
 		}
 		// i == 0
 		else {
