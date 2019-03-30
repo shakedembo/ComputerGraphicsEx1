@@ -192,15 +192,59 @@ public class SeamsCarver extends ImageProcessor {
         result = reduceImageWidth();
 
         for (int i = numOfSeams - 1; i >= 0; i--) {
-            result = recoverDoublesOfSeam(i);
-        }
+            result = recoverSeam(i);
 
+        }
+		result = doubleAllSeams();
         return result;
 	}
 
-    private BufferedImage recoverDoublesOfSeam(int seamNumber) {
+	private BufferedImage doubleAllSeams() {
 
-        BufferedImage ans = newEmptyImage(result.getWidth() + 2, result.getHeight());
+		BufferedImage ans = newEmptyImage(result.getWidth() + numOfSeams, result.getHeight());
+		int colIndex;
+		for (int i = 0; i < result.getHeight(); i++) {
+			colIndex = 0;
+			for (int j = 0; j < result.getWidth(); j++) {
+
+				for (int seamNumber = 0; seamNumber < seamsValues.length; seamNumber++) {
+
+					if (seamsIndices[seamNumber][i] == j) {
+						ans.setRGB(colIndex, i, seamsValues[seamNumber][i]);
+						colIndex ++;
+						increaseIndicesOfLaterSeams(seamNumber, i);
+						break;
+					}
+				}
+				ans.setRGB(colIndex, i, result.getRGB(j, i));
+				colIndex++;
+
+			}
+		}
+
+		return ans;
+	}
+
+	/** As my data structure stores indices of seams according to the image it had at the moment,
+	 * 	meaning that if our original picture is of size n x m, then after 3 seam removals it'll be of size n x m -3.
+	 * 	the index of the 4th seam will correspond to a picture of size n x m - 3.
+	 * 	Thus, to properly recover it for every row when doubling the pixel (meaning this pixel was in a seam)
+	 * 	then we increase all indices of seams that followed it.
+	 *
+	 * @param seamNumber
+	 * @param rowNumber
+	 */
+	private void increaseIndicesOfLaterSeams(int seamNumber, int rowNumber) {
+
+		for (int i = seamNumber + 1; i < seamsIndices.length; i++) {
+
+			seamsIndices[i][rowNumber]++;
+		}
+	}
+
+	private BufferedImage recoverSeam(int seamNumber) {
+
+        BufferedImage ans = newEmptyImage(result.getWidth() + 1, result.getHeight());
         int colIndex;
 
         for (int i = 0; i < result.getHeight(); i++) {
@@ -209,9 +253,7 @@ public class SeamsCarver extends ImageProcessor {
 
                 if (seamsIndices[seamNumber][i] == j) {
                     ans.setRGB(colIndex, i, seamsValues[seamNumber][i]);
-                    ans.setRGB(colIndex + 1, i, seamsValues[seamNumber][i]);
-
-                    colIndex += 2;
+                    colIndex ++;
                 }
 
                 ans.setRGB(colIndex, i, result.getRGB(j, i));
